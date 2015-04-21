@@ -181,8 +181,9 @@ void lineBetween(){
       strokeWeight(2);
       count++;
       line(loc.x,loc.y,loc.z,other.loc.x,other.loc.y,other.loc.z);
-      println(count);
-      println(i);
+      hm.put(i, count);
+//      println(count);
+//      println(i);
       }
   }
   }  

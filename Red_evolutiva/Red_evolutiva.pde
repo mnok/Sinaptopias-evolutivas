@@ -15,7 +15,7 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-
+import java.util.Map;
 import toxi.geom.*;
 import peasy.*;
 PeasyCam jCam;
@@ -25,7 +25,7 @@ float x,y,z;
 int crecer = 10;
 int canti = 120;
 ArrayList ballCollection;
-
+HashMap<Integer,Integer> hm = new HashMap<Integer,Integer>();
 
 void setup() {
 size(1000,700,P3D);
@@ -71,6 +71,21 @@ void draw() {
 
   jCam.endHUD(); 
   hint(ENABLE_DEPTH_TEST);
+  
+  
+//  hm.put("Ava", 1);
+//  hm.put("Cait", 35);
+//  hm.put("Casey", 36);
+  
+    // Using an enhanced loop to interate over each entry
+  for (Map.Entry me : hm.entrySet()) {
+    print(me.getKey() + " is ");
+    println(me.getValue());
+  }
+//  // We can also access values by their key
+//  int val = hm.get("Casey");
+//  println("Casey is " + val);
+
   
   
   //CALL FUNCTIONALITY

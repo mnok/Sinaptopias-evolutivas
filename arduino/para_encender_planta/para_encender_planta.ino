@@ -1,31 +1,30 @@
- // Wiring/Arduino code:
- // Read data from the serial and turn ON or OFF a light depending on the value
- 
- char val; // Data received from the serial port
- int ledPin = 8; // Set the pin to digital I/O 4
- int relay = 13;
- int soil=0;
- 
- int savedTime = 0;
- int totalTime = 12000;
- boolean timer = true;
- 
- void setup() {
- pinMode(ledPin, OUTPUT); // Set pin as OUTPUT 
- pinMode(relay, OUTPUT); 
- Serial.begin(9600); // Start serial communication at 9600 bps
- }
- 
- void loop() {  
-   
-  
- if (Serial.available()) { // If data is available to read,
- val = Serial.read(); // read it and store it in val
- }
- 
+char val; // Data received from the serial port
+int ledPin1 = 13; // Set the pin to digital I/O 4
+int ledPin2 = 12;
+int ledPin3 = 11;
+int ledPin4 = 10;
+int relay = 8;
+int sensorproxi = 3;
+int porPh=0;
+int porProxi=0;
 
-      
- if (soil <= 50){
+int savedTime = 0;
+int totalTime = 12000;
+boolean timer = true;
+ 
+void setup() {
+ pinMode(relay, OUTPUT); // Set pin as OUTPUT 
+ pinMode(ledPin1, OUTPUT);
+ pinMode(ledPin2, OUTPUT);
+ pinMode(ledPin3, OUTPUT);
+ pinMode(ledPin4, OUTPUT);
+ pinMode(sensorproxi, OUTPUT);
+ Serial.begin(9600); // Start serial communication at 9600 bps
+}
+ 
+void loop() {   
+  
+ if (porPh <= 50){
     if(timer){
     savedTime = millis();
     timer = false;
@@ -34,33 +33,44 @@
     int passedTime = millis() - savedTime;
 
     if (passedTime > totalTime) {
-     
-     
- //if (val == 'H') { // If H was received
- digitalWrite(ledPin, LOW); // turn the LED on
- digitalWrite(relay, HIGH); 
- delay(3000);
- savedTime = millis();
- }
+       digitalWrite(relay, LOW);
+       digitalWrite(ledPin2, HIGH);
+       digitalWrite(ledPin4, HIGH);
+       delay(3000);
+       savedTime = millis();
+    }
  } else {
- digitalWrite(ledPin, HIGH); // Otherwise turn it OFF
- digitalWrite(relay, LOW);
+   digitalWrite(relay, HIGH);
+   digitalWrite(ledPin2, LOW);
+   digitalWrite(ledPin4, LOW);
  }
  
- 
-  int sensorValue = analogRead(A0);
-  sensorValue = constrain(sensorValue, 0, 1023);
+  if(porProxi >=10){
+    digitalWrite(ledPin1, HIGH); 
+  }
+  else {
+    digitalWrite(ledPin1, LOW);
+  }
+  
+  digitalWrite(ledPin3, HIGH);
+  
+  int phSensor = analogRead(A0);
+  int proxiSensor = analogRead(A3);
+  phSensor = constrain(phSensor, 0, 1023);
+  porProxi = constrain(porProxi, 0, 1023);
   // print out the value you read:
-  //Serial.println(sensorValue);
 
   //map the value to a percentage
-  soil = map(sensorValue, 250, 400, 0, 100);
+  porPh = map(phSensor, 250, 400, 0, 100);
+  porProxi = map(proxiSensor, 10, 980, 0, 100); // sensor proximidad
   
   // print out the soil water percentage you calculated:
-  Serial.print(soil);
-  Serial.print(sensorValue);
+//  Serial.print(soil);
+  Serial.print(porProxi);
   Serial.println("%");
-  Serial.write(soil); 
- delay(100); // Wait 100 milliseconds for next reading
+  Serial.write(porPh); 
+  Serial.write(porProxi); 
+  delay(100); // Wait 100 milliseconds for next reading
 }
+
 
