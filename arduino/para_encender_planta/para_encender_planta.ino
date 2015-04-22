@@ -24,7 +24,7 @@ void setup() {
  
 void loop() {   
   
- if (porPh <= 50){
+ if (porPh <= 40){
     if(timer){
     savedTime = millis();
     timer = false;
@@ -67,8 +67,9 @@ void loop() {
   porProxi = map(proxiSensor, 10, 980, 0, 100); // sensor proximidad
   
   // print out the soil water percentage you calculated:
-  //Serial.print(porProxi);
-  //Serial.println("%");
+//  Serial.print(porProxi);
+////  Serial.print(phSensor);
+//  Serial.println("%");
   Serial.write(porPh); 
   Serial.write(porProxi); 
   delay(100); // Wait 100 milliseconds for next reading

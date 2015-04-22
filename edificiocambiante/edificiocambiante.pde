@@ -52,7 +52,7 @@ PeasyCam cam;
 ToxiclibsSupport gfx;
 float flechaTemp = 2050;
 int generation = 1;
-int pobla = 1;
+int pobla = 2;
 int dimX = 35;
 int dimY = 70;
 int dimZ = 35;
@@ -72,7 +72,7 @@ int rIntens =255;
 int gIntens =255;
 int bIntens =255;
 
-int bcgColor=120;
+int bcgColor=152;
 
 float [][][][] a;
 float [][][][] b;
@@ -533,12 +533,14 @@ if(selecTime){
       savedTime3 = millis();
     }
     if(currentFrame == 0){
+      bcgColor = 152;
       aparecer = true;
       aparecer2 = false;
       aparecer3 = false;
     }
     
     if(currentFrame == 1){
+      bcgColor = 0;
       aparecer = false;
       aparecer2 = true;
       aparecer3 = false;
@@ -622,6 +624,16 @@ if(skeletonactive){
     coltriangle = 255;
   }
   
+  if(val <= 300 && skeletonactive){
+    opacidad = 290-val;
+  }else {
+    opacidad = 255;
+  }
+  
+  if(opacidad <= 18){ // agrego esto porque a veces se pone en negativo
+    opacidad = 20;
+  }
+  
 //  if ( myPort.available() > 0) {  // If data is available,
 //    val = myPort.read();         // read it and store it in val
 //  }
@@ -649,19 +661,19 @@ void serialEvent(Serial myPort) {
   
   serialCount = 0;
  }
+ val= (int)map(val+20, 0, 120, 20, 254);
  val2 = (int)map(val2, 4, 80, 0, 254);
  
+ println(val + "\t" + opacidad);
 }
 
 void keyPressed() {
-//  if(key=='a') {//move panels, change colors
-//    aparecer=false;
-//    aparecer2=false;
-//  }
-//  if(key=='b') {//move panels, change colors
-//    aparecer=true;
-//    aparecer2=true;
-//  }
+  if(key=='a') {//move panels, change colors
+    selecTime = false;
+  }
+  if(key=='b') {//move panels, change colors
+    selecTime = true;
+  }
 }
 
 void initLight() {//by Marius Watz
