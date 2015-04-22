@@ -36,6 +36,7 @@ void loop() {
        digitalWrite(relay, LOW);
        digitalWrite(ledPin2, HIGH);
        digitalWrite(ledPin4, HIGH);
+        digitalWrite(ledPin3, LOW);
        delay(3000);
        savedTime = millis();
     }
@@ -43,6 +44,7 @@ void loop() {
    digitalWrite(relay, HIGH);
    digitalWrite(ledPin2, LOW);
    digitalWrite(ledPin4, LOW);
+   digitalWrite(ledPin3, HIGH);
  }
  
   if(porProxi >=10){
@@ -52,12 +54,12 @@ void loop() {
     digitalWrite(ledPin1, LOW);
   }
   
-  digitalWrite(ledPin3, HIGH);
+ 
   
   int phSensor = analogRead(A0);
   int proxiSensor = analogRead(A3);
   phSensor = constrain(phSensor, 0, 1023);
-  porProxi = constrain(porProxi, 0, 1023);
+//  proxiSensor = constrain(proxiSensor, 0, 980);
   // print out the value you read:
 
   //map the value to a percentage
@@ -65,9 +67,8 @@ void loop() {
   porProxi = map(proxiSensor, 10, 980, 0, 100); // sensor proximidad
   
   // print out the soil water percentage you calculated:
-//  Serial.print(soil);
-  Serial.print(porProxi);
-  Serial.println("%");
+  //Serial.print(porProxi);
+  //Serial.println("%");
   Serial.write(porPh); 
   Serial.write(porProxi); 
   delay(100); // Wait 100 milliseconds for next reading

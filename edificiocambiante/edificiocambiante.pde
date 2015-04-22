@@ -205,7 +205,11 @@ boolean timer3 = true;
 
 int savedTime3 = 0;
 int totalTime3 = 15000;
-int check = 1;
+
+int numFrames = 3;  // The number of frames in the animation
+int currentFrame = 0;
+int[] cambio = new int[3];
+int colorlittle = 255;
 
 /**********************
 **      arduino      **
@@ -213,9 +217,15 @@ int check = 1;
 
 Serial myPort;  // Create object from Serial class
 int val;      // Data received from the serial port
+int val2;
+int[] serialInArray = new int[2];
+int serialCount = 0; 
+int coltriangle = 0;
 
 void setup () {
   size(1200, 900, P3D);
+  frameRate(24);
+  
 //  cam = new PeasyCam(this, 250);
 //  cam.rotateX(0.7);
 //  cam.rotateY(0.45);
@@ -286,6 +296,14 @@ void setup () {
   
   String portName = Serial.list()[0];
   myPort = new Serial(this, portName, 9600);
+  
+  /**********************
+  **     aparecer      **
+  **********************/
+
+  cambio[0]  = 4; 
+  cambio[1]  = 5;
+  cambio[2]  = 6; 
 
 }
 
@@ -497,7 +515,11 @@ if(aparecer2){
   gl2.glDisable(GL2.GL_BLEND);
   endPGL();
  // popMatrix();
-  //println(aparecer2);
+
+  /**********************
+  **     aparecer      **
+  **********************/ 
+ 
 if(selecTime){
   
    if(timer3){
@@ -507,17 +529,27 @@ if(selecTime){
     
     int passedTime3 = millis() - savedTime3;
     if (passedTime3 > totalTime3) {
-
-      check++;
+      currentFrame = (currentFrame+1) % numFrames;
       savedTime3 = millis();
     }
-    if(check % 2 == 0){
-      aparecer3 = true; 
-      aparecer = false;
-    }else {
-       aparecer = true;   
-       aparecer3 = false;
+    if(currentFrame == 0){
+      aparecer = true;
+      aparecer2 = false;
+      aparecer3 = false;
     }
+    
+    if(currentFrame == 1){
+      aparecer = false;
+      aparecer2 = true;
+      aparecer3 = false;
+    }
+    
+    if(currentFrame == 2){
+      aparecer = false;
+      aparecer2 = false;
+      aparecer3 = true;
+    }
+    
   }
       
     
@@ -537,7 +569,6 @@ if(skeletonactive){
     int passedTime2 = millis() - savedTime2;
 
     if (passedTime2 > totalTime2) {
-//      updateColors();
       
       rIntens =(int)random(255);
       gIntens =(int)random(255);
@@ -546,10 +577,25 @@ if(skeletonactive){
       gFreq = (int)random(20);
       bFreq = (int)random(20); 
       flechaTemp = flechaTemp + 50;
-      generation = generation +1;
-      savedTime2 = millis(); // Save the current time to restart the timer!    
+      generation = generation +1;    
+
+      if(aparecer2){
+      DIM2 = (int)random(15, 20);
+      //colorlittle = (int)random(10,255);
+      atick=0;
+      i2=random(100);
+      volume3=new VolumetricSpaceArray(SCALE2,DIM2,DIM2,DIM2); 
+      surface3=new HashIsoSurface(volume3);
+      brush3=new RoundBrush(volume3,10);
+      ptc2=new ArrayList();
+      for(int i=0;i<pAmount2;i++) {
+        ptc2.add(new Particle());
+      }
+      }
+      
       if(aparecer3){
-      DIM = (int)random(10, 35);
+      DIM = (int)random(15, 35);
+     // colorlittle = (int)random(10,255);
       atick=0;
       i=random(100);
       volume2=new VolumetricSpaceArray(SCALE,DIM,DIM,DIM); 
@@ -560,19 +606,51 @@ if(skeletonactive){
         ptc.add(new Particle());
       }
       }
+      savedTime2 = millis(); // Save the current time to restart the timer!
    }
-      //runReaction = true;
+      runReaction = true;
    }  
    
-  /**********************
+ 
+  if(val2 >= 10){
+    rIntens = val2/2;
+    gIntens = val2+30;
+    bIntens = val2-20;
+    updateColors();
+    coltriangle = val2+25;
+  }else {
+    coltriangle = 255;
+  }
+  
+//  if ( myPort.available() > 0) {  // If data is available,
+//    val = myPort.read();         // read it and store it in val
+//  }
+//  println(val);
+  
+}
+
+ /**********************
   **      arduino      **
   **********************/
+
+void serialEvent(Serial myPort) {
   
-  if ( myPort.available() > 0) {  // If data is available,
-    val = myPort.read();         // read it and store it in val
-  }
-  println(val);
+ int inByte = myPort.read();
+ 
+ serialInArray[serialCount] = inByte;
+ serialCount++;
+ 
+ if (serialCount > 1 ) {
+  val = serialInArray[0];
+  val2 = serialInArray[1];
+  //println(val + "\t" + val2 + "\t");
   
+  // Reset serialCount:
+  
+  serialCount = 0;
+ }
+ val2 = (int)map(val2, 4, 80, 0, 254);
+ 
 }
 
 void keyPressed() {
