@@ -74,11 +74,11 @@ int passedTime = millis() - savedTime;
     floorDensity--;
   }
   
-  if(lefthhandz <= 200 && DIM >=8 && add)
+  if(lefthhandz <= 200 && DIM <=8 && add)
   {
     DIM++;
   }
-  if(lefthhandz >= 200 && DIM <=35 && add)
+  if(lefthhandz >= 200 && DIM >=35 && add)
   {
     DIM--;
   }
@@ -138,7 +138,7 @@ void handStateright0(int handStateright0) {
     movehand2 = true;
     break;
   case KinectPV2.HandState_Closed:
-  if(aparecer2){
+  if(aparecer3){
       fcount=0;
       atick=0;
       i=random(100);
@@ -150,6 +150,19 @@ void handStateright0(int handStateright0) {
         ptc.add(new Particle());
       }
     }
+    if(aparecer2){
+      DIM2 = (int)random(15, 20);
+      //colorlittle = (int)random(10,255);
+      atick=0;
+      i2=random(100);
+      volume3=new VolumetricSpaceArray(SCALE2,DIM2,DIM2,DIM2); 
+      surface3=new HashIsoSurface(volume3);
+      brush3=new RoundBrush(volume3,10);
+      ptc2=new ArrayList();
+      for(int i=0;i<pAmount2;i++) {
+        ptc2.add(new Particle());
+      }
+      }
     if(aparecer){
     active = false;    
     rIntens =(int)random(255);
@@ -163,7 +176,7 @@ void handStateright0(int handStateright0) {
     }
     break;
   case KinectPV2.HandState_Lasso:
-  if ( opacidad <= 254 && aparecer){
+  if ( opacidad <= 254 && aparecer || opacidad <= 254 && aparecer2 || opacidad <= 254 && aparecer3){
     opacidad = opacidad +50;
     updateColors();
   }
@@ -202,7 +215,7 @@ void handStateLeft0(int handStateLeft0) {
     fondo = true;
     runReaction = true;
   }
-  if(aparecer2){
+  if(aparecer2 || aparecer3){
     add = true;
   }
     break;
