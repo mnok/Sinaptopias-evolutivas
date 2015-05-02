@@ -16,8 +16,6 @@ int num_beasts;
 int last_num_beasts;
 int population_age = 0;
 
-PImage bgimg;
-
 ArrayList<Beast> beasts;
 int num_bubbles;
 Bubble[] bubbles;
