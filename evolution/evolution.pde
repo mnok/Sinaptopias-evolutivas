@@ -4,8 +4,14 @@ import ddf.minim.*;
 //import ddf.minim.analysis.*;
 //import ddf.minim.ugens.*;
 //import ddf.minim.effects.*;
+import peasy.org.apache.commons.math.*;
+import peasy.*;
+import peasy.org.apache.commons.math.geometry.*;
+
 Minim minim;
 AudioPlayer[] soundfx;
+
+PeasyCam cam;
 
 boolean show_web = true;
 
@@ -17,17 +23,21 @@ int last_num_beasts;
 int population_age = 0;
 
 ArrayList<Beast> beasts;
-int num_bubbles;
-Bubble[] bubbles;
+//int num_bubbles;
+//Bubble[] bubbles;
 
 color filter_hue;
 
 
 void setup() {
   
-  size(1280, 720);
+  size(1280, 720, P3D);
   noTint();
-
+  
+  cam = new PeasyCam(this,450);
+  cam.rotateX(PI*0.3);
+  cam.rotateZ(PI*0.3);
+  
   filter_hue = 250;
   
   beasts = new ArrayList<Beast>();
@@ -40,18 +50,18 @@ void setup() {
   last_num_beasts = num_beasts;
   for ( int i=0; i<num_beasts; i++ ) {
     
-    beasts.add(new Beast(random(width), random(height), random(8, 75)));
+    beasts.add(new Beast(random(width), random(height), random(0, 500), random(8, 75)));
     Beast beast = beasts.get(i);
     beast.getgoing();
     beast.set_genome();
   }
   
   // create some bubbles to float around
-  num_bubbles = (int)random(20, 50);
-  bubbles = new Bubble[num_bubbles];
-  for (int i=0; i<num_bubbles; i++ ) {
-    bubbles[i] = new Bubble();
-  }
+//  num_bubbles = (int)random(20, 50);
+//  bubbles = new Bubble[num_bubbles];
+//  for (int i=0; i<num_bubbles; i++ ) {
+//    bubbles[i] = new Bubble();
+//  }
   
   // setup the sound & loop background track
   minim = new Minim(this);
@@ -67,24 +77,33 @@ void setup() {
 }
 
 void draw() {
-  
-  background(198,38,52);
+  if ( frameCount%10 == 0 ) {
+    filter_hue = ++filter_hue%360;
+  }
+  //background(198,38,52);
+  background(filter_hue, 100, 100, 60);
   noTint();
   //image(bgimg,0,0); // background(bgimg);
   
   // draw some bubbles over the background
-  for (int i=0; i<num_bubbles; i++ ) {
-    bubbles[i].move_bubble();
-    bubbles[i].draw_bubble();
-  }
+//  for (int i=0; i<num_bubbles; i++ ) {
+//    bubbles[i].move_bubble();
+//    bubbles[i].draw_bubble();
+//  }
+  
+//    pushMatrix();
+//    translate(width/2, height/2, width/2);
+////    fill(255,255,255,50);
+//    noFill();
+//    box(width);
+//    endShape();
+//    popMatrix();
   
   // color filter - changes slowly to add a bit of extra visual interest
-  fill(filter_hue, 100, 100, 60);
-  noStroke();
-  rect(0,0,width,height);
-  if ( frameCount%10 == 0 ) {
-    filter_hue = ++filter_hue%360;
-  }
+//  fill(filter_hue, 100, 100, 60);
+//  noStroke();
+//  rect(0,0,width,height);
+
   
   // for each beast
   for (int i=0; i<beasts.size(); i++) {
@@ -115,7 +134,7 @@ void draw() {
       // make some more
       int newbeasts = (int)random(min_beasts/2, max_beasts/2);
       for ( int i=0; i<newbeasts; i++ ) {
-        beasts.add(new Beast(random(width), random(height), random(8, 75)));
+        beasts.add(new Beast(random(width), random(height), random(0, 500), random(8, 75)));
         Beast newbeast = beasts.get(last_num_beasts+i);
         newbeast.getgoing();
         newbeast.set_genome();
@@ -144,10 +163,10 @@ static final int MAX_SPINES = 20;
  
 class Beast {
   
-  float x, y, size, original_size;    // Set in initialisation routine
+  float x, y, z, size, original_size;    // Set in initialisation routine
 
   float direction, wander;     // These are randomised in getgoing routine
-  float nuc_dx, nuc_dy;
+  float nuc_dx, nuc_dy, nuc_dz;
   color nucleus_color;
   PVector[] q_puntos;
   PVector[] q_ptss;
@@ -158,9 +177,10 @@ class Beast {
                                       // and gives evolutionary advantage.
 
   
-  Beast(float x_, float y_, float size_) {
+  Beast(float x_, float y_, float z_, float size_) {
     x = x_;
     y = y_;
+    z = z_;
     size = size_;
     original_size = size_;
     q_puntos=new PVector[7];
@@ -174,6 +194,7 @@ class Beast {
     wander = random(radians(-5), radians(5)); // rate of change of direction - degrees per frame
     nuc_dx = random(-size/6, size/6);
     nuc_dy = random(-size/6, size/6);
+    nuc_dz = random(-size/6, size/6);
   }
   
   // initialise the inherited characteristics
@@ -219,19 +240,22 @@ class Beast {
   void move() {
     float dx = speed*cos(direction);
     float dy = speed*sin(direction);
+    float dz = speed*cos(5);
     x += dx;
     y += dy;
+    z += dz;
     direction -= wander;
     // wrap around the spherical topology if we hit the side
-    if ( x < -size/2 ) x = width + size/2 ; if ( x > width + size/2 ) x = -size/2 ;
-    if ( y < -size/2 ) y = height + size/2 ; if ( y > height + size/2 ) y = -size/2;
+    if ( x < -size/2 ) x = width + size/2 ; if ( x > width + size/2 ) x = -size/2;
+    if ( y < -size/2 ) y = width + size/2 ; if ( y > width + size/2 ) y = -size/2;
+    if ( z < -size/2 ) z = width + size/2 ; if ( z > width + size/2 ) z = -size/2;
   }
   
   // draw to screen
   void display() {
     fill(bcolor);
     stroke(nucleus_color);
-    draw_beast(x, y, size, q_puntos);
+    draw_beast(x, y, z, size, q_puntos);
   }
   
   // is there something nearby? Do we chase it or run away?
@@ -240,18 +264,18 @@ class Beast {
     Beast me = beasts.get(thisbeast);
     
     // only interact if I'm on the screen - need a chance to get back in play otherwise
-    if ( me.x > me.size/2 && me.x < width-me.size/2 && me.y > me.size/2 && me.y < height-me.size/2 ) {
+    if ( me.x > me.size/2 && me.x < width-me.size/2 && me.y > me.size/2 && me.y < width-me.size/2 && me.z > me.size/2 && me.z < width-me.size/2) {
       // check for nearby beasts
       for (int i=beasts.size()-1; i>=0; i--) {
         if (i != thisbeast ) {
           Beast otherbeast = beasts.get(i);
           range_of_detection = (me.size+otherbeast.size)*2 + random(0, me.size/2); // more random variation to combat stalemate situations
-          range = dist(me.x, me.y, otherbeast.x, otherbeast.y);
+          range = dist(me.x, me.y, me.z, otherbeast.x, otherbeast.y, otherbeast.z);
           if ( range <= range_of_detection ) {
             if (show_web) { // visualise web of conflicting influences
               strokeWeight(0.4);
               stroke(69,29,85,200); // stroke(me.nucleus_color);
-              line(me.x+me.nuc_dx, me.y+me.nuc_dy, otherbeast.x+otherbeast.nuc_dx, otherbeast.y+otherbeast.nuc_dy);
+              line(me.x+me.nuc_dx, me.y+me.nuc_dy, me.z+me.nuc_dz, otherbeast.x+otherbeast.nuc_dx, otherbeast.y+otherbeast.nuc_dy, otherbeast.z+otherbeast.nuc_dz);
             }
             // chase it!
             me.direction = -acos( (otherbeast.x - me.x )/range );
@@ -271,7 +295,7 @@ class Beast {
     for (int i=beasts.size()-1; i>=0; i--) {
       if (i != thisbeast ) {
         Beast otherbeast = beasts.get(i);
-        if ( dist(me.x, me.y, otherbeast.x, otherbeast.y) < (me.size+otherbeast.size)/2 && me.size>otherbeast.size ) {
+        if ( dist(me.x, me.y, me.z, otherbeast.x, otherbeast.y, otherbeast.z) < (me.size+otherbeast.size)/2 && me.size>otherbeast.size ) {
           // gain area, not just diameter!
           size = 2*sqrt( sq(me.size/2) + sq(otherbeast.size/2) );
           beasts.remove(otherbeast);
@@ -285,7 +309,7 @@ class Beast {
     Beast oldbeast = this;
     if (oldbeast.size >= 1.2*oldbeast.original_size) {
       oldbeast.size=oldbeast.size*0.6;
-      beasts.add(new Beast(x, y, oldbeast.size ));
+      beasts.add(new Beast(x, y, z, oldbeast.size ));
       Beast newbeast = beasts.get(beasts.size()-1);
       oldbeast.getgoing();          // and send off in differerent directions
       newbeast.getgoing();
@@ -311,25 +335,25 @@ class Beast {
         switch(mut)
         {
           case 1:
-               q_puntos[0] = new PVector(random(0, 75), random(0, 90));
+               q_puntos[0] = new PVector(random(0, 75), random(0, 90), random(0, 75));
                break; 
           case 2:
-               q_puntos[1] = new PVector(random(0, 75), random(0, 90));
+               q_puntos[1] = new PVector(random(0, 75), random(0, 90), random(0, 75));
                break;
           case 3:
-               q_puntos[2] = new PVector(random(0, 75), random(0, 90));
+               q_puntos[2] = new PVector(random(0, 75), random(0, 90), random(0, 75));
                break; 
           case 4:
-               q_puntos[3] = new PVector(random(0, 75), random(0, 90)); 
+               q_puntos[3] = new PVector(random(0, 75), random(0, 90), random(0, 75)); 
                break; 
           case 5:
-               q_puntos[4] = new PVector(random(0, 75), random(0, 90));
+               q_puntos[4] = new PVector(random(0, 75), random(0, 90), random(0, 75));
                break; 
           case 6:
-               q_puntos[5] = new PVector(random(0, 75), random(0, 90));
+               q_puntos[5] = new PVector(random(0, 75), random(0, 90), random(0, 75));
                break; 
           case 7:
-               q_puntos[6] = new PVector(random(0, 75), random(0, 90));
+               q_puntos[6] = new PVector(random(0, 75), random(0, 90), random(0, 75));
                break;
           default:
                break;
@@ -346,36 +370,36 @@ class Beast {
 //  
   void construct() {
     
-    q_puntos[0] = new PVector(random(0, 75), random(0, 90));
-    q_puntos[1] = new PVector(random(0, 75), random(0, 90));
-    q_puntos[2] = new PVector(random(0, 75), random(0, 90));
-    q_puntos[3] = new PVector(random(0, 75), random(0, 90)); 
-    q_puntos[4] = new PVector(random(0, 75), random(0, 90));
-    q_puntos[5] = new PVector(random(0, 75), random(0, 90));
-    q_puntos[6] = new PVector(random(0, 75), random(0, 90));
+    q_puntos[0] = new PVector(random(0, 75), random(0, 90), random(0, 75));
+    q_puntos[1] = new PVector(random(0, 75), random(0, 90), random(0, 75));
+    q_puntos[2] = new PVector(random(0, 75), random(0, 90), random(0, 75));
+    q_puntos[3] = new PVector(random(0, 75), random(0, 90), random(0, 75)); 
+    q_puntos[4] = new PVector(random(0, 75), random(0, 90), random(0, 75));
+    q_puntos[5] = new PVector(random(0, 75), random(0, 90), random(0, 75));
+    q_puntos[6] = new PVector(random(0, 75), random(0, 90), random(0, 75));
     
   }
 //  
   // draw a beast
-  void draw_beast(float x, float y, float size, PVector[]q_puntos1) {
+  void draw_beast(float x, float y, float z, float size, PVector[]q_puntos1) {
     
     // draw the cell body
     strokeWeight(size/30);
 //    ellipse(x, y, size, size);
     
     pushMatrix();
-    translate(x-50, y-50);
+    translate(x-50, y-50, z-50);
     fill(bcolor);
 //    rotate(direction+wander);
     scale(size/45);
     beginShape(TRIANGLE_STRIP);
-    vertex(q_puntos1[0].x, q_puntos1[0].y);
-    vertex(q_puntos1[1].x, q_puntos1[1].y);
-    vertex(q_puntos1[2].x, q_puntos1[2].y);
-    vertex(q_puntos1[3].x, q_puntos1[3].y);
-    vertex(q_puntos1[4].x, q_puntos1[4].y);
-    vertex(q_puntos1[5].x, q_puntos1[5].y);
-    vertex(q_puntos1[6].x, q_puntos1[6].y);
+    vertex(q_puntos1[0].x, q_puntos1[0].y, q_puntos1[0].z);
+    vertex(q_puntos1[1].x, q_puntos1[1].y, q_puntos1[1].z);
+    vertex(q_puntos1[2].x, q_puntos1[2].y, q_puntos1[2].z);
+    vertex(q_puntos1[3].x, q_puntos1[3].y, q_puntos1[3].z);
+    vertex(q_puntos1[4].x, q_puntos1[4].y, q_puntos1[4].z);
+    vertex(q_puntos1[5].x, q_puntos1[5].y, q_puntos1[5].z);
+    vertex(q_puntos1[6].x, q_puntos1[6].y, q_puntos1[6].z);
     endShape();
     popMatrix();
     
@@ -403,38 +427,44 @@ class Beast {
  * Class definition for the bubble object
  */
 
-class Bubble {
- 
-  float x, y, size, speed, direction, wander;
-  color bubble_col = color(184, 8, 95, 9);
-
-  Bubble() {
-     x = random(width);
-     y = random(height);
-     size = random( 10, 30 );
-     speed = random(1, 4 );
-     direction = random( -PI/4, PI/4 );
-     wander = 0.003; // random( 0.001, 0.008 );
-  }
-  
-  void move_bubble() {
-    x = x + speed*cos(direction);
-    y = y + speed*sin(direction);
-    direction += wander;
-    if ( x < -size/2 ) x = width + size/2 ; if ( x > width + size/2 ) x = -size/2 ;
-    if ( y < -size/2 ) y = height + size/2 ; if ( y > height + size/2 ) y = -size/2;
-  }
-  
-  void draw_bubble() {
-    noFill();
-    stroke(bubble_col);
-    for ( int i=0; i<4; i++ ) {
-      strokeWeight(size/(i+1));
-      ellipse(x, y, size, size);      
-    }
-  }
-    
-}
+//class Bubble {
+// 
+//  float x, y, z, size, speed, direction, wander;
+//  color bubble_col = color(184, 8, 95, 9);
+//
+//  Bubble() {
+//     x = random(width);
+//     y = random(width);
+//     z = random(width);
+//     size = random( 10, 30 );
+//     speed = random(1, 4 );
+//     direction = random( -PI/4, PI/4 );
+//     wander = 0.003; // random( 0.001, 0.008 );
+//  }
+//  
+//  void move_bubble() {
+//    x = x + speed*cos(direction);
+//    y = y + speed*sin(direction);
+//    z = z + speed*cos(5);
+//    direction += wander;
+////    if ( x < -size/2 ) x = width + size/2 ; if ( x > width + size/2 ) x = -size/2 ;
+////    if ( y < -size/2 ) y = height + size/2 ; if ( y > height + size/2 ) y = -size/2;
+//  }
+//  
+//  void draw_bubble() {
+//    noFill();
+//    stroke(bubble_col);
+//    for ( int i=0; i<4; i++ ) {
+//      pushMatrix();
+//      strokeWeight(size/(i+1));
+//      translate(x, y, z);
+//      sphere(size);
+//      popMatrix();
+////      ellipse(x, y, size, size);      
+//    }
+//  }
+//    
+//}
 
 /*
  * Class definition for a spine object
