@@ -9,6 +9,7 @@ import peasy.*;
 import peasy.org.apache.commons.math.geometry.*;
 import processing.opengl.*;
 import saito.objloader.*;
+import processing.dxf.*;
 
 Minim minim;
 AudioPlayer[] soundfx;
@@ -21,6 +22,7 @@ BoundingBox bbox;
 PeasyCam cam;
 
 boolean show_web = true;
+boolean record =false ;
 
 static final int min_beasts = 50;
 static final int max_beasts = 90;
@@ -173,11 +175,22 @@ void draw() {
     population_age = 0;
   }
   
+  if (record == true) {
+    beginRaw(DXF, "shapes/shape-####.dxf");
+  }
+  if (record == true) {
+    endRaw();
+    record = false; // Stop recording to the file
+  }
+  
 }
 
 void keyPressed() {
   switch(key) {
     case 'w': show_web = !show_web; break;
+  }
+  if(key=='r') {//save to dxf
+    record = true;
   }
 }
 
