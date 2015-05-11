@@ -26,7 +26,7 @@ void setup() {
  
 void loop() {   
   
- if (porPh <= 40){
+ if (porPh <= 60){
     if(timer){
     savedTime = millis();
     timer = false;
@@ -39,7 +39,7 @@ void loop() {
        digitalWrite(ledPin2, HIGH);
        digitalWrite(ledPin4, HIGH);
        digitalWrite(ledPin3, LOW);
-       delay(3000);
+       delay(1000);
        savedTime = millis();
     }
  } else {
@@ -65,15 +65,24 @@ void loop() {
   // print out the value you read:
 
   //map the value to a percentage
-  porPh = map(phSensor, 250, 400, 0, 100);
+  porPh = map(phSensor, 15, 40, 0, 100);
   porProxi = map(proxiSensor, 10, 980, 0, 100); // sensor proximidad
   
   // print out the soil water percentage you calculated:
- // Serial.print(porProxi);
-  Serial.print(sensorlight);
-  Serial.println("%");
-  Serial.write(porPh); 
-  Serial.write(porProxi); 
+//  Serial.print(phSensor);
+//  Serial.print(porPh);
+//  Serial.println("%");
+Serial.print(porPh,DEC);
+Serial.print(",");
+Serial.print(porProxi,DEC);
+Serial.print(",");
+Serial.print(sensorlight,DEC);
+Serial.print(",");
+Serial.print(sensorlight,DEC);
+Serial.print("|");
+//  Serial.write(porPh,DEC); 
+//  Serial.write(porProxi);
+//  Serial.write(sensorlight);
   delay(100); // Wait 100 milliseconds for next reading
 }
 

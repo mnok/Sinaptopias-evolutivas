@@ -8,6 +8,7 @@ import peasy.org.apache.commons.math.*;
 import peasy.*;
 import peasy.org.apache.commons.math.geometry.*;
 import processing.dxf.*;
+import processing.serial.*;
 
 Minim minim;
 AudioPlayer[] soundfx;
@@ -25,24 +26,30 @@ int last_num_beasts;
 int population_age = 0;
 
 ArrayList<Beast> beasts;
-//int num_bubbles;
-//Bubble[] bubbles;
+int num_bubbles;
+ArrayList<Bubble> bubbles;
+int luz = 0;
 
 color filter_hue;
 
+Serial myPort;      // The serial port
+int[] serialInArray = new int[3]; // Where we'll put what we receive
+int serialCount = 0;     // A count of how many bytes we receive
+int var1, var2, var3;
 
 void setup() {
   
   size(1280, 720, P3D);
   noTint();
   
-  cam = new PeasyCam(this,450);
+  cam = new PeasyCam(this,10);
   cam.rotateX(PI*0.3);
   cam.rotateZ(PI*0.3);
   
   filter_hue = 250;
   
   beasts = new ArrayList<Beast>();
+  bubbles = new ArrayList<Bubble>();
   
   
   
@@ -59,11 +66,12 @@ void setup() {
   }
   
   // create some bubbles to float around
-//  num_bubbles = (int)random(20, 50);
-//  bubbles = new Bubble[num_bubbles];
-//  for (int i=0; i<num_bubbles; i++ ) {
-//    bubbles[i] = new Bubble();
-//  }
+  num_bubbles = 1;
+  for (int i=0; i<num_bubbles; i++ ) {
+    
+    bubbles.add(new Bubble());
+ //   Bubble bubble = bubbles.get(i);
+  }
   
   // setup the sound & loop background track
   minim = new Minim(this);
@@ -76,22 +84,50 @@ void setup() {
   colorMode(HSB, 360, 100, 100);
   noStroke();
   smooth(8);
+  
+  // arduino
+  
+ println(Serial.list());
+ // I know that the first port in the serial list on my mac
+ // is always my FTDI adaptor, so I open Serial.list()[0].
+ // On Windows machines, this generally opens COM1.
+ // Open whatever port is the one you're using.
+ String portName = Serial.list()[0];
+ myPort = new Serial(this, portName, 9600);
+  
 }
 
 void draw() {
-  if ( frameCount%10 == 0 ) {
+  if ( frameCount%20 == 0 ) {
     filter_hue = ++filter_hue%360;
   }
-  //background(198,38,52);
+ // background(0);
   background(filter_hue, 100, 100, 60);
   noTint();
   //image(bgimg,0,0); // background(bgimg);
   
+  
+  hint (DISABLE_DEPTH_TEST); 
+  cam.beginHUD(); 
+  noLights();
+  //stroke(300);
+
+  fill(255, 0, 0);
+  textSize(32);
+  String myText = "Luz: " + luz;
+  //String myText4 = "Hubs " + ;
+  text(myText, 50, 100);
+  
+  cam.endHUD(); 
+  hint(ENABLE_DEPTH_TEST);
+  
   // draw some bubbles over the background
-//  for (int i=0; i<num_bubbles; i++ ) {
-//    bubbles[i].move_bubble();
-//    bubbles[i].draw_bubble();
-//  }
+  for (int i=0; i<bubbles.size(); i++ ) {
+    Bubble bubble = bubbles.get(i);
+    bubble.move_bubble();
+    bubble.draw_bubble();
+    bubble.updater(mouseX,mouseY,i);
+  }
   
 //    pushMatrix();
 //    translate(width/2, height/2, width/2);
@@ -100,7 +136,7 @@ void draw() {
 //    box(width);
 //    endShape();
 //    popMatrix();
-  
+    luz = var3;
   // color filter - changes slowly to add a bit of extra visual interest
 //  fill(filter_hue, 100, 100, 60);
 //  noStroke();
@@ -158,6 +194,20 @@ void draw() {
   
 }
 
+void serialEvent(Serial myPort){
+String myString = myPort.readStringUntil(124); //the ascii value of the "|" character
+if(myString != null ){
+  myString = trim(myString); //remove whitespace around our values
+  int inputs[] = int(split(myString, ','));
+  //now assign your values in processing
+  if(inputs.length == 4){
+    var1 = inputs[0];
+    var2 = inputs[1];
+    var3 = inputs[2];
+  }
+}
+}
+
 void keyPressed() {
   switch(key) {
     case 'w': show_web = !show_web; break;
@@ -185,9 +235,12 @@ class Beast {
   PVector[] q_ptss;
 
   float speed;                        // Initially random, but inherited from parent
-  ArrayList<Spine> spines;            // when reproducing - no. of spines and color are
   color bcolor;                       // visual indicators of speed, which can mutate,
                                       // and gives evolutionary advantage.
+  boolean atract;                                   
+  int fillIn;
+  int followTime;
+
 
   
   Beast(float x_, float y_, float z_, float size_) {
@@ -198,6 +251,9 @@ class Beast {
     original_size = size_;
     q_puntos=new PVector[7];
     construct();
+    
+    atract = false;
+    followTime = millis();
 
   }
 
@@ -217,7 +273,6 @@ class Beast {
     colorMode(HSB, 360, 100, 100);
     bcolor = color(hue, 100, 100, 90);
     nucleus_color = color(hue, 100, 40, 200);
-    setup_spines();
   }
   
   // copy over inheritable characteristics
@@ -226,31 +281,11 @@ class Beast {
     newbeast.q_puntos = oldbeast.q_puntos;
     newbeast.bcolor = oldbeast.bcolor;
     newbeast.nucleus_color = oldbeast.nucleus_color;
-    // we'll keep the same number of spines, but not make them identical
-    newbeast.spines = new ArrayList<Spine>();
-    int num_spines = (int)oldbeast.spines.size();
-    for (int i=0; i<num_spines; i++ ) {
-      float division = TWO_PI/num_spines;
-      newbeast.spines.add(new Spine( division*i, random(size/8, size/3) ));
-    }
   }
 
-  // set up an array of spines
-  void setup_spines() {
-    int num_spines;
-    spines = new ArrayList<Spine>();
-    
-    num_spines = (int)random(MIN_SPINES, MAX_SPINES);
-    
-    // for each spine, set up an angular offset and length, proportional to size
-    for (int i = 0; i<num_spines; i++) {
-        float division = TWO_PI/num_spines;
-        spines.add(new Spine( division*i, random(size/8, size/3) ));
-    }
-  } 
-   
   // move according to current speed and direction - stay on the screen
   void move() {
+    if (!atract){
     float dx = speed*cos(direction);
     float dy = speed*sin(direction);
     float dz = speed*cos(5);
@@ -262,6 +297,7 @@ class Beast {
     if ( x < -size/2 ) x = width + size/2 ; if ( x > width + size/2 ) x = -size/2;
     if ( y < -size/2 ) y = width + size/2 ; if ( y > width + size/2 ) y = -size/2;
     if ( z < -size/2 ) z = width + size/2 ; if ( z > width + size/2 ) z = -size/2;
+    }
   }
   
   // draw to screen
@@ -273,6 +309,7 @@ class Beast {
   
   // is there something nearby? Do we chase it or run away?
   void hunt(int thisbeast) {
+    if (!atract){
     float range, range_of_detection;
     Beast me = beasts.get(thisbeast);
     
@@ -299,10 +336,12 @@ class Beast {
         }
       }
     }
+    }
   }
   
   // find something smaller than yourself? eat it!
   void encounter(int thisbeast) {
+    if (!atract){
     Beast me = beasts.get(thisbeast);
     // check those other beasts
     for (int i=beasts.size()-1; i>=0; i--) {
@@ -314,6 +353,7 @@ class Beast {
           beasts.remove(otherbeast);
         }
       }
+    }
     }
   }
 
@@ -371,12 +411,6 @@ class Beast {
           default:
                break;
         }
-        int num_spines = spines.size()+1;
-        spines.clear();
-        for (int i=0; i<num_spines; i++ ) {
-          float division = TWO_PI/num_spines;
-          spines.add(new Spine( division*i, random(size/8, size/3) ));
-        }
       }
     }
   }
@@ -398,12 +432,10 @@ class Beast {
     
     // draw the cell body
     strokeWeight(size/30);
-//    ellipse(x, y, size, size);
     
     pushMatrix();
     translate(x-50, y-50, z-50);
     fill(bcolor);
-//    rotate(direction+wander);
     scale(size/45);
     beginShape(TRIANGLE_STRIP);
     vertex(q_puntos1[0].x, q_puntos1[0].y, q_puntos1[0].z);
@@ -414,25 +446,30 @@ class Beast {
     vertex(q_puntos1[5].x, q_puntos1[5].y, q_puntos1[5].z);
     vertex(q_puntos1[6].x, q_puntos1[6].y, q_puntos1[6].z);
     endShape();
-    popMatrix();
-    
-    // draw the spines (and rotate a bit for next time)
-//    for (int i=0; i<spines.size(); i++ ) {
-//      Spine cur_spine = spines.get(i);
-//      cur_spine.draw_spine(x, y, size, nucleus_color);
-//      cur_spine.angle -= wander/4;
+    popMatrix();    
+  }
+  
+  // agrego el atractor
+  
+   void update(float followX, float followY, float followZ){     
+     if(millis()-followTime<2000 && millis()-followTime>100){
+        x = followX + random(10-250);
+        y = followY + random(10-250);
+        z = followZ + random(10-250);
+        atract = true;
+     } else {
+       atract = false;
+     }
+     
+//    for(int i = 0; i < bubbles.size(); i++) {
+//      Bubble atractor = (Bubble) (bubbles.get(i));
+//    float distance = me. dist(atractor. dist);
+//    if (distance > 0 && distance < 170){
+//      stroke(random(105),random(155),random(155));
+//      strokeWeight(2);
+//      line(loc.x,loc.y,loc.z,other.loc.x,other.loc.y,other.loc.z);
+//      }
 //    }
-//    
-//    // draw the nucleus
-//    pushMatrix();
-//    translate(x+nuc_dx, y+nuc_dy);
-//    rotate(direction+wander);
-//    fill(nucleus_color);
-//    strokeWeight(size/15);
-//    stroke(186, 20, 91, 90);
-//    ellipse(0, 0, size/3, size/4);
-//    popMatrix();
-    
   }
  
 }
@@ -440,75 +477,63 @@ class Beast {
  * Class definition for the bubble object
  */
 
-//class Bubble {
-// 
-//  float x, y, z, size, speed, direction, wander;
-//  color bubble_col = color(184, 8, 95, 9);
-//
-//  Bubble() {
-//     x = random(width);
-//     y = random(width);
-//     z = random(width);
-//     size = random( 10, 30 );
-//     speed = random(1, 4 );
-//     direction = random( -PI/4, PI/4 );
-//     wander = 0.003; // random( 0.001, 0.008 );
-//  }
-//  
-//  void move_bubble() {
-//    x = x + speed*cos(direction);
-//    y = y + speed*sin(direction);
-//    z = z + speed*cos(5);
-//    direction += wander;
-////    if ( x < -size/2 ) x = width + size/2 ; if ( x > width + size/2 ) x = -size/2 ;
-////    if ( y < -size/2 ) y = height + size/2 ; if ( y > height + size/2 ) y = -size/2;
-//  }
-//  
-//  void draw_bubble() {
-//    noFill();
-//    stroke(bubble_col);
-//    for ( int i=0; i<4; i++ ) {
-//      pushMatrix();
-//      strokeWeight(size/(i+1));
-//      translate(x, y, z);
-//      sphere(size);
-//      popMatrix();
-////      ellipse(x, y, size, size);      
-//    }
-//  }
-//    
-//}
-
-/*
- * Class definition for a spine object
- */
+class Bubble {
  
-class Spine {
-  
-  float angle;
-  float spine_length;
-  
-  Spine (float angle_, float length_) {
-    angle = angle_;
-    spine_length = length_;
+  float x, y, z, size, speed, direction, wander;
+  color bubble_col = color(184, 8, 95, 9);
+
+  Bubble() {
+     x = random(width);
+     y = random(width);
+     z = random(width);
+     size = random( 100, 150 );
+     speed = random(0.1, 0.2);
+     direction = random( -PI/4, PI/4 );
+     wander = 0.003; // random( 0.001, 0.008 );
   }
   
-  void draw_spine(float x, float y, float beast_size, color nucleus_color) {
+  void move_bubble() {
+    x = x + speed*cos(direction);
+    y = y + speed*sin(direction);
+    z = z + speed*cos(5);
+    direction += wander;
+    if ( x < -size/2 ) x = width + size/2 ; if ( x > width + size/2 ) x = -size/2;
+    if ( y < -size/2 ) y = width + size/2 ; if ( y > width + size/2 ) y = -size/2;
+    if ( z < -size/2 ) z = width + size/2 ; if ( z > width + size/2 ) z = -size/2;
+  }
+  
+  void updater(int attractorX, int attractorY, int thisatractor){
+    x = x+var1;
+    y = y+var2;
+    z = z-var2;
+    float range, range_of_detection;
+    Bubble me = bubbles.get(thisatractor);
     
-    pushMatrix();
-    translate(x, y);
-    rotate(angle);
-    strokeWeight(beast_size/35);
-    stroke(nucleus_color);
-    line(beast_size/2, 0, beast_size/2+spine_length, 0);
-    stroke(186, 20, 100, 80);
-    fill(0, 0, 50, 40);
-    ellipse(beast_size/2+spine_length, 0, beast_size/25, beast_size/25);   
-    // offset a bit and draw an interior blob
-    rotate(radians(30));
-    ellipse(spine_length*0.95, 0, beast_size/8, beast_size/8);
-    popMatrix();
+    for (int i=beasts.size()-1; i>=0; i--) {
+      Beast otherbeast = beasts.get(i);
+      range_of_detection = 500; // more random variation to combat stalemate situations
+      range = dist(me.x, me.y, me.z, otherbeast.x, otherbeast.y, otherbeast.z);
+      if ( range <= range_of_detection ) {
+   
+      otherbeast.update(x, y, z);
+    }
+   }
   }
   
+  void draw_bubble() {
+    noFill();
+    stroke(bubble_col);
+    for ( int i=0; i<4; i++ ) {
+      pushMatrix();
+     // strokeWeight(size/(i+1));
+      fill(var3, 220,150);
+      translate(x, y, z);
+      sphere(size);
+      popMatrix();
+//      ellipse(x, y, size, size);      
+    }
+  }
+    
 }
+
 
