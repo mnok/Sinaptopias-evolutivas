@@ -24,8 +24,8 @@ PeasyCam cam;
 boolean show_web = true;
 boolean record =false ;
 
-static final int min_beasts = 50;
-static final int max_beasts = 90;
+static final int min_beasts = 90;
+static final int max_beasts = 140;
 int stagnation_point = 600 ; // 20 sec at 30 FPS
 int num_beasts;
 int last_num_beasts;
@@ -40,18 +40,18 @@ color filter_hue;
 
 // arduino
 
-/*
+
 Serial myPort;      // The serial port
 int[] serialInArray = new int[3]; // Where we'll put what we receive
 int serialCount = 0;     // A count of how many bytes we receive
-*/
+
 int var1, var2, var3;
 
 // forma 3d
 
 boolean animate=true;
 WETriangleMesh mesh2;
-int DIM = 25;//dimensions of the voxel space: 45x45x45 voxels
+int DIM = 15;//dimensions of the voxel space: 45x45x45 voxels
 float ISO_THRESHOLD =0.5;//higher values smoothen the result, lower uncover spherical characteristics of volumebrush
 Vec3D SCALE = new Vec3D(0.3,0.3,0.3).scaleSelf(2000);//proportions and scale of voxel space
 VolumetricSpace volume2 = new VolumetricSpaceArray(SCALE,DIM,DIM,DIM);
@@ -68,14 +68,27 @@ float sc=0.008;
 int fcount=0;
 float atick=0;
 
+int transparencia = 150;
+
+boolean repetidor = true;
+boolean die = true;
+
+int followTime2;
+int followTime3;
+int totalTime2 = 35000;
+int dietime= 25000;
+int currentFrame = 0;
+int numFrames = 3;
+
 void setup() {
   
-  size(1280, 720, P3D);
+ // size(1280, 720, P3D);
+  size(displayWidth, displayHeight, P3D);
   noTint();
   
   cam = new PeasyCam(this,10);
   cam.rotateX(PI*0.3);
-  cam.rotateZ(PI*0.3);
+  cam.rotateZ(PI*2);
   
   filter_hue = 250;
   
@@ -101,7 +114,6 @@ void setup() {
   for (int i=0; i<num_bubbles; i++ ) {
     
     bubbles.add(new Bubble());
- //   Bubble bubble = bubbles.get(i);
   }
   
   // setup the sound & loop background track
@@ -118,13 +130,13 @@ void setup() {
   
   // arduino
   
-// println(Serial.list());
+println(Serial.list());
  // I know that the first port in the serial list on my mac
  // is always my FTDI adaptor, so I open Serial.list()[0].
  // On Windows machines, this generally opens COM1.
  // Open whatever port is the one you're using.
-// String portName = Serial.list()[0];
- //myPort = new Serial(this, portName, 9600);
+ String portName = Serial.list()[0];
+ myPort = new Serial(this, portName, 9600);
  
  // modelo 3d 
  
@@ -135,14 +147,21 @@ void setup() {
     ptc.add(new Particle());
   }
   panels=new ArrayList();
+  
+  followTime2 = millis();
+  followTime3 = millis();
+}
+
+boolean sketchFullScreen() {
+  return true;
 }
 
 void draw() {
   if ( frameCount%20 == 0 ) {
     filter_hue = ++filter_hue%360;
   }
- // background(0);
-  background(filter_hue, 100, 100, 60);
+  background(luz);
+  //background(filter_hue, 100, 100, 60);
   noTint();
   //image(bgimg,0,0); // background(bgimg);
   
@@ -152,11 +171,13 @@ void draw() {
   noLights();
   //stroke(300);
 
-  fill(255, 0, 0);
+  
   textSize(32);
-  String myText = "Luz: " + luz;
+  String myText = "energia: " + luz;
   //String myText4 = "Hubs " + ;
-  text(myText, 50, 100);
+  fill(0, 102, 153);
+  text("energia: " + luz, 50, 100);
+  text("poblacion: " + beasts.size(), 50, 150);
   
   cam.endHUD(); 
   hint(ENABLE_DEPTH_TEST);
@@ -169,19 +190,32 @@ void draw() {
     bubble.updater(mouseX,mouseY,i);
   }
   
-    pushMatrix();
-    translate(width/2, height/2, width/2);
-////    fill(255,255,255,50);
-    noFill();
-    box(width);
-    endShape();
-    popMatrix();
-    //luz = var3;
+//    pushMatrix();
+//    translate(width/2, height/2, width/2);
+//////    fill(255,255,255,50);
+//    noFill();
+//    box(width);
+//    endShape();
+//    popMatrix();
+    luz = var3;
   // color filter - changes slowly to add a bit of extra visual interest
 //  fill(filter_hue, 100, 100, 60);
 //  noStroke();
 //  rect(0,0,width,height);
-
+   int passedTime3 = millis() - followTime3;
+   if (passedTime3 > totalTime2) {
+    println("activo clonacion");
+    currentFrame = (currentFrame+1) % numFrames;
+    repetidor = true;
+    followTime3 = millis();
+   }
+   
+   int passedTime = millis() - followTime2;
+   if (passedTime > dietime) {
+    die = true;
+    println("activo muerte");
+    followTime2 = millis();
+   }
   
   // for each beast
   for (int i=0; i<beasts.size(); i++) {
@@ -261,6 +295,8 @@ void draw() {
     if(animate)p.construct();
     pushMatrix();
     translate(width/2, height/2, width/2);
+    int luz2 = luz/50;
+    scale(0.2+luz2);
     p.display();
     popMatrix();
   }
@@ -273,7 +309,7 @@ void draw() {
   
 }
 
-/*void serialEvent(Serial myPort){
+void serialEvent(Serial myPort){
 String myString = myPort.readStringUntil(124); //the ascii value of the "|" character
 if(myString != null ){
   myString = trim(myString); //remove whitespace around our values
@@ -285,7 +321,7 @@ if(myString != null ){
     var3 = inputs[2];
   }
 }
-}*/
+}
 
 void keyPressed() {
   switch(key) {
@@ -328,7 +364,8 @@ class Beast {
   color nucleus_color;
   PVector[] q_puntos;
   PVector[] q_ptss;
-
+  boolean circle;
+  
   float speed;                        // Initially random, but inherited from parent
   color bcolor;                       // visual indicators of speed, which can mutate,
                                       // and gives evolutionary advantage.
@@ -347,6 +384,8 @@ class Beast {
     q_puntos=new PVector[7];
     construct();
     
+    circle = false;
+    
     atract = false;
     followTime = millis();
 
@@ -363,7 +402,7 @@ class Beast {
   
   // initialise the inherited characteristics
   void set_genome() {
-    speed = random(1, 4);
+    speed = random(4, 8);
     float hue = random(176, 330);
     colorMode(HSB, 360, 100, 100);
     bcolor = color(hue, 100, 100, 90);
@@ -375,7 +414,31 @@ class Beast {
     newbeast.speed = oldbeast.speed;
     newbeast.q_puntos = oldbeast.q_puntos;
     newbeast.bcolor = oldbeast.bcolor;
-    newbeast.nucleus_color = oldbeast.nucleus_color;
+  }
+  void inherit2(Beast oldbeast, Beast newbeast) {
+    newbeast.speed = oldbeast.speed;
+    newbeast.q_puntos = oldbeast.q_puntos;
+    newbeast.circle = true;
+    switch(currentFrame)
+        {
+          case 1:
+              colorMode(HSB, 360, 100, 100);
+              newbeast.bcolor = color(3, 98, 97);
+              println("prueba de color case 1");
+              break;
+          case 2:
+              colorMode(HSB, 360, 100, 100);
+              newbeast.bcolor = color(129, 96, 99);
+              println("prueba de color case 2");
+              break;
+          case 3:
+              colorMode(HSB, 360, 100, 100);
+              newbeast.bcolor = color(34, 96, 99);
+              println("prueba de color case 3");
+              break;
+          default:
+              break;
+        }
   }
 
   // move according to current speed and direction - stay on the screen
@@ -399,7 +462,12 @@ class Beast {
   void display() {
     fill(bcolor);
     stroke(nucleus_color);
+    if(!circle){
     draw_beast(x, y, z, size, q_puntos);
+    }
+    if(circle){
+    draw_beast_circle(x, y, z, size);
+    }
   }
   
   // is there something nearby? Do we chase it or run away?
@@ -418,7 +486,7 @@ class Beast {
           range = dist(me.x, me.y, me.z, otherbeast.x, otherbeast.y, otherbeast.z);
           if ( range <= range_of_detection ) {
             if (show_web) { // visualise web of conflicting influences
-              strokeWeight(0.4);
+              strokeWeight(2);
               stroke(69,29,85,200); // stroke(me.nucleus_color);
               line(me.x+me.nuc_dx, me.y+me.nuc_dy, me.z+me.nuc_dz, otherbeast.x+otherbeast.nuc_dx, otherbeast.y+otherbeast.nuc_dy, otherbeast.z+otherbeast.nuc_dz);
             }
@@ -456,6 +524,7 @@ class Beast {
   void reproduce() {
     Beast oldbeast = this;
     if (oldbeast.size >= 1.2*oldbeast.original_size) {
+      circle = false;
       oldbeast.size=oldbeast.size*0.6;
       beasts.add(new Beast(x, y, z, oldbeast.size ));
       Beast newbeast = beasts.get(beasts.size()-1);
@@ -544,9 +613,22 @@ class Beast {
     popMatrix();    
   }
   
+   void draw_beast_circle(float x, float y, float z, float size) {
+    
+    // draw the cell body
+    strokeWeight(size/30);
+    
+    pushMatrix();
+    translate(x-50, y-50, z-50);
+    fill(bcolor);
+    sphere(size/4+luz/2);
+    popMatrix();    
+  }
+  
   // agrego el atractor
   
-   void update(float followX, float followY, float followZ){     
+   void update(float followX, float followY, float followZ){ 
+     int event = int(random(1 , 4));    
      if(millis()-followTime<2000 && millis()-followTime>100){
         x = followX + random(10-250);
         y = followY + random(10-250);
@@ -555,16 +637,43 @@ class Beast {
      } else {
        atract = false;
      }
-     
-//    for(int i = 0; i < bubbles.size(); i++) {
-//      Bubble atractor = (Bubble) (bubbles.get(i));
-//    float distance = me. dist(atractor. dist);
-//    if (distance > 0 && distance < 170){
-//      stroke(random(105),random(155),random(155));
-//      strokeWeight(2);
-//      line(loc.x,loc.y,loc.z,other.loc.x,other.loc.y,other.loc.z);
-//      }
-//    }
+      switch(event)
+        {
+          case 1:
+                if(repetidor){
+                  Beast oldbeast = this;
+                  int newbeasts = (int)random(10, 20);
+                  for ( int i=0; i<newbeasts; i++ ) {
+                    beasts.add(new Beast(random(x, x+500), random(y, y+500), random(z, z+100), oldbeast.size));
+                    Beast newbeast = beasts.get(i);
+                    oldbeast.size=oldbeast.size*0.6;
+                    oldbeast.getgoing();          // and send off in differerent directions
+                    newbeast.getgoing();
+                    inherit2(oldbeast, newbeast);  // inherit characteristics
+                    oldbeast.mutate();            // either one could mutate
+                    newbeast.mutate();
+                 }
+                 println("case 1");
+                 repetidor = false;
+                }
+              
+               break;
+           case 2:
+               //size = size+0.5;
+               break;
+           case 3:
+               if(die){
+               Beast me = this;
+               beasts.remove(me);
+               println("case 3");
+               }
+               die = false;
+               break;
+           case 4:
+               break;
+           default:
+               break;
+        }
   }
  
 }
@@ -581,8 +690,8 @@ class Bubble {
      x = random(width);
      y = random(width);
      z = random(width);
-     size = random( 100, 150 );
-     speed = random(0.1, 0.2);
+     size = random( 50, 90 );
+     speed = random(0.01, 0.02);
      direction = random( -PI/4, PI/4 );
      wander = 0.003; // random( 0.001, 0.008 );
   }
@@ -592,9 +701,11 @@ class Bubble {
     y = y + speed*sin(direction);
     z = z + speed*cos(5);
     direction += wander;
-    if ( x < -size/2 ) x = width + size/2 ; if ( x > width + size/2 ) x = -size/2;
-    if ( y < -size/2 ) y = width + size/2 ; if ( y > width + size/2 ) y = -size/2;
-    if ( z < -size/2 ) z = width + size/2 ; if ( z > width + size/2 ) z = -size/2;
+   if ( x < -size/2 ) x = width + size/2 ; if ( x > width + size/2 ) x = -size/2;    
+   if ( y < -size/2 ) y = width + size/2 ; if ( y > width + size/2 ) y = -size/2;
+   if ( z < -size/2 ) z = width + size/2 ; if ( z > width + size/2 ) z = -size/2;
+    
+  
   }
   
   void updater(int attractorX, int attractorY, int thisatractor){
@@ -623,7 +734,7 @@ class Bubble {
      // strokeWeight(size/(i+1));
       fill(var3, 220,150);
       translate(x, y, z);
-      sphere(size);
+      sphere(size+luz);
       popMatrix();
 //      ellipse(x, y, size, size);      
     }

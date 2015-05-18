@@ -49,7 +49,7 @@ void loop() {
    digitalWrite(ledPin3, HIGH);
  }
  
-  if(porProxi >=10){
+  if(porProxi >=20){
     digitalWrite(ledPin1, HIGH); 
   }
   else {

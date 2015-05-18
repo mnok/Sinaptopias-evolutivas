@@ -86,7 +86,8 @@ class TriangularPanel {
   }
  
   void display() {
-    fill(noise(atick+p1.x*sc,atick+p1.y*sc,atick+p1.z*sc)* 255,255,255-noise(atick+p1.x*sc,atick+p1.y*sc,atick+p1.z*sc)*255);//regulates color of each segment
+    noStroke();
+    fill(noise(atick+p1.x*sc,atick+p1.y*sc,atick+p1.z*sc)* 255,255,255-noise(atick+p1.x*sc,atick+p1.y*sc,atick+p1.z*sc)*255,transparencia);//regulates color of each segment
 //    fill(noise(atick+p1.x*sc,atick+p1.y*sc,atick+p1.z*sc)* 255,col,255-noise(atick+p1.x*sc,atick+p1.y*sc,atick+p1.z*sc)*255,127);//regulates color of each segment
     beginShape();
     vertex(innP1.x,innP1.y,innP1.z);
@@ -98,7 +99,7 @@ class TriangularPanel {
     endShape(CLOSE);
     
 //    fill(noise(atick+p2.x*sc,atick+p2.y*sc,atick+p2.z*sc)*255,col,255-noise(atick+p2.x*sc,atick+p2.y*sc,atick+p2.z*sc)*col+10,127);//-||-
-fill(noise(atick+p2.x*sc,atick+p2.y*sc,atick+p2.z*sc)*255,255,255-noise(atick+p2.x*sc,atick+p2.y*sc,atick+p2.z*sc)*255);//-||-
+fill(noise(atick+p2.x*sc,atick+p2.y*sc,atick+p2.z*sc)*255,255,255-noise(atick+p2.x*sc,atick+p2.y*sc,atick+p2.z*sc)*255,transparencia);//-||-
         beginShape();
     vertex(innP2.x,innP2.y,innP2.z);
     vertex(mid_p2p3.x,mid_p2p3.y,mid_p2p3.z);
@@ -108,7 +109,7 @@ fill(noise(atick+p2.x*sc,atick+p2.y*sc,atick+p2.z*sc)*255,255,255-noise(atick+p2
     vertex(innP1.x,innP1.y,innP1.z);
     endShape(CLOSE);
 //    fill(noise(atick+p3.x*sc,atick+p3.y*sc,atick+p3.z*sc)*col+10,85,255-noise(atick+p3.x*sc,atick+p3.y*sc,atick+p3.z*sc)*255,127);//-||-
-fill(noise(atick+p3.x*sc,atick+p3.y*sc,atick+p3.z*sc)*255,85,255-noise(atick+p3.x*sc,atick+p3.y*sc,atick+p3.z*sc)*255);//-||-
+fill(noise(atick+p3.x*sc,atick+p3.y*sc,atick+p3.z*sc)*255,85,255-noise(atick+p3.x*sc,atick+p3.y*sc,atick+p3.z*sc)*255,transparencia);//-||-
      beginShape();
     vertex(innP3.x,innP3.y,innP3.z);
     vertex(mid_p3p1.x,mid_p3p1.y,mid_p3p1.z);
