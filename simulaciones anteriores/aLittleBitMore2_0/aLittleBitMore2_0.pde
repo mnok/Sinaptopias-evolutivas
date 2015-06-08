@@ -23,7 +23,7 @@ import processing.dxf.*;
 boolean record =false ;
 boolean animate=true;
 WETriangleMesh mesh2;
-int DIM = 10;//dimensions of the voxel space: 45x45x45 voxels
+int DIM = 30;//dimensions of the voxel space: 45x45x45 voxels
 float ISO_THRESHOLD =0.5;//higher values smoothen the result, lower uncover spherical characteristics of volumebrush
 Vec3D SCALE = new Vec3D(0.3,0.3,0.3).scaleSelf(2000);//proportions and scale of voxel space
 VolumetricSpace volume2 = new VolumetricSpaceArray(SCALE,DIM,DIM,DIM);
@@ -36,7 +36,7 @@ float brushDensity=10;
 
 WETriangleMesh mesh3;
 int DIM2 = 30;//dimensions of the voxel space: 45x45x45 voxels
-Vec3D SCALE2 = new Vec3DVec3D(1, 2, 1).scaleSelf(100);//proportions and scale of voxel space
+Vec3D SCALE2 = new Vec3D(1, 2, 1).scaleSelf(100);//proportions and scale of voxel space
 VolumetricSpace volume3 = new VolumetricSpaceArray(SCALE2,DIM2,DIM2,DIM2);
 ;
 IsoSurface surface3;

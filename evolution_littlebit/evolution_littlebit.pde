@@ -8,6 +8,7 @@ import peasy.org.apache.commons.math.*;
 import peasy.*;
 import peasy.org.apache.commons.math.geometry.*;
 import processing.dxf.*;
+// arduino
 import processing.serial.*;
 // 3d model
 import toxi.processing.*;
@@ -80,15 +81,24 @@ int dietime= 25000;
 int currentFrame = 0;
 int numFrames = 3;
 
+// fractales de la planta
+
+float theta;   
+float counter = 0;
+float noPetals = 6; //number of petals the fractal flower has
+float reductionFactor = 0.66; //by what factor should the next branch get reduced by? 0.5 = each branch is half the size of the previous one.
+float cutOff = 7; //what is the minimum branch length?  the fractal will continue to be drawn until this minimum size is reached.
+float branchFactor = 2 ; //number of branches at each level
+
 void setup() {
   
- // size(1280, 720, P3D);
+ // size(1000, 600, P3D);
   size(displayWidth, displayHeight, P3D);
   noTint();
   
   cam = new PeasyCam(this,10);
-  cam.rotateX(PI*0.3);
-  cam.rotateZ(PI*2);
+ // cam.rotateX(PI*0.3);
+//  cam.rotateZ(PI*2);
   
   filter_hue = 250;
   
@@ -165,6 +175,8 @@ void draw() {
   noTint();
   //image(bgimg,0,0); // background(bgimg);
   
+  counter += 1;
+  theta = radians(counter);
   
   hint (DISABLE_DEPTH_TEST); 
   cam.beginHUD(); 
@@ -186,8 +198,13 @@ void draw() {
   for (int i=0; i<bubbles.size(); i++ ) {
     Bubble bubble = bubbles.get(i);
     bubble.move_bubble();
-    bubble.draw_bubble();
+   // bubble.draw_bubble();
+    bubble.drawPetal();
     bubble.updater(mouseX,mouseY,i);
+  }
+    for(int i = 0; i < noPetals; i++) {
+    
+    rotate(PI / (noPetals/2.0));
   }
   
 //    pushMatrix();
@@ -205,6 +222,17 @@ void draw() {
    int passedTime3 = millis() - followTime3;
    if (passedTime3 > totalTime2) {
     println("activo clonacion");
+     fcount=0;
+    atick=0;
+    i=random(100);
+    DIM = (int)random(10, 35);
+    volume2=new VolumetricSpaceArray(SCALE,DIM,DIM,DIM); 
+    surface2=new HashIsoSurface(volume2);
+    brush2=new RoundBrush(volume2,10);
+    ptc=new ArrayList();
+    for(int i=0;i<pAmount;i++) {
+      ptc.add(new Particle());
+    }
     currentFrame = (currentFrame+1) % numFrames;
     repetidor = true;
     followTime3 = millis();
@@ -611,18 +639,67 @@ class Beast {
     vertex(q_puntos1[6].x, q_puntos1[6].y, q_puntos1[6].z);
     endShape();
     popMatrix();    
-  }
+  } 
+  
   
    void draw_beast_circle(float x, float y, float z, float size) {
     
-    // draw the cell body
-    strokeWeight(size/30);
-    
+   int luz3 = luz/200;
+   float size2 = size/200;
     pushMatrix();
+    scale(size2+luz3);
     translate(x-50, y-50, z-50);
-    fill(bcolor);
-    sphere(size/4+luz/2);
-    popMatrix();    
+    for(int i = 0; i < noPetals; i++) {
+    drawPetal2();
+    rotate(PI / (noPetals/2.0));
+  }
+  popMatrix(); 
+  }
+  
+  void draw_bubble(float h) {
+    h *= reductionFactor;
+  //if our branch size is large enough to continue,
+  if (h > cutOff) {
+    //for each branch that we want to draw
+    for(int i = 0; i < branchFactor; i++) {
+      //rotate the coordinate frame and draw a line.
+      pushMatrix();
+      rotate(branchFactor*theta/2);
+      line(0, 0, 0, -h, 30, 60);
+      //then move our origin to the end of the line we just drew
+      translate(0, -h);
+      //and branch from there
+      draw_bubble(h);
+      popMatrix();
+
+      //repeat for the negative direction
+      pushMatrix();
+      rotate(-branchFactor*theta/2);
+      line(0, 0, 0, -h, 2, 60);
+      translate(0, -h);
+      draw_bubble(h);
+      popMatrix();
+      
+      //if our branching factor is odd, draw a branch without a rotation
+      if (branchFactor % 2 != 0) {
+        pushMatrix();
+        line(0, 0, 0, -h, 1, 80);
+        translate(0, -h);
+        draw_bubble(h);
+        popMatrix();
+      }
+    }
+  }
+  }
+  void drawPetal2() {
+    
+   // translate(x, y, z);
+    stroke(bcolor);
+    line(0, 0, 0, -height/8, 20, 30);
+    translate(0, -height/8);
+    draw_bubble(height/8);
+    translate(0, height/8);
+    
   }
   
   // agrego el atractor
@@ -726,18 +803,74 @@ class Bubble {
    }
   }
   
-  void draw_bubble() {
-    noFill();
-    stroke(bubble_col);
-    for ( int i=0; i<4; i++ ) {
+//  void draw_bubble() {
+//    noFill();
+//    stroke(bubble_col);
+//    for ( int i=0; i<4; i++ ) {
+//      pushMatrix();
+//     // strokeWeight(size/(i+1));
+//      fill(var3, 220,150);
+//      translate(x, y, z);
+//      sphere(size+luz);
+//      popMatrix();
+////      ellipse(x, y, size, size);      
+//    }
+//  }
+   void draw_bubble(float h) {
+    h *= reductionFactor;
+  //if our branch size is large enough to continue,
+  if (h > cutOff) {
+    //for each branch that we want to draw
+    for(int i = 0; i < branchFactor; i++) {
+      //rotate the coordinate frame and draw a line.
       pushMatrix();
-     // strokeWeight(size/(i+1));
-      fill(var3, 220,150);
-      translate(x, y, z);
-      sphere(size+luz);
+      rotate(branchFactor*theta/2);
+      line(0, 0, 0, -h, 30, 60);
+      //then move our origin to the end of the line we just drew
+      translate(0, -h);
+      //and branch from there
+      draw_bubble(h);
       popMatrix();
-//      ellipse(x, y, size, size);      
+
+      //repeat for the negative direction
+      pushMatrix();
+      rotate(-branchFactor*theta/2);
+      line(0, 0, 0, -h, 2, 60);
+      translate(0, -h);
+      draw_bubble(h);
+      popMatrix();
+      
+      //if our branching factor is odd, draw a branch without a rotation
+      if (branchFactor % 2 != 0) {
+        pushMatrix();
+        line(0, 0, 0, -h, 1, 80);
+        translate(0, -h);
+        draw_bubble(h);
+        popMatrix();
+      }
     }
+  }
+  }
+  void drawPetal(){
+    int luz3 = luz/120;
+    pushMatrix();
+    scale(0.5+luz3);
+    translate(x, y, z);
+    for(int i = 0; i < noPetals; i++) {
+    drawPetal2();
+    rotate(PI / (noPetals/2.0));
+  }
+  popMatrix();
+  }
+  void drawPetal2() {
+    
+   // translate(x, y, z);
+    stroke(var3, 220,150);
+    line(0, 0, 0, -height/8, 20, 30);
+    translate(0, -height/8);
+    draw_bubble(height/8);
+    translate(0, height/8);
+    
   }
     
 }
